@@ -100,8 +100,8 @@
   .hud-footer{font-size:clamp(7px,1.8vw,8px);color:#ffffff22;letter-spacing:clamp(1px,0.4vw,2px);text-align:center;padding-top:8px;border-top:1px solid #00D4CC11;position:relative;z-index:1;word-break:break-all;}
 </style>
 
-<audio id="bgMusic" loop>
-  <source src="/media/VISIONS 仮面ライダーゼッツ主題歌.mp3" type="audio/mpeg">
+<audio id="bgMusic">
+  <source src="media/VISIONS 仮面ライダーゼッツ主題歌.mp3" type="audio/mpeg">
 </audio>
 
 <div class="hud scanline">
@@ -115,10 +115,11 @@
         <div class="hud-sub">ESP32 · DHT11 · MANOLO FORTICH · PH</div>
       </div>
     </div>
-    <div class="status-row">
-      <div class="pulse" id="statusDot"></div>
-      <span class="status-txt" id="statusTxt">ONLINE</span>
-    </div>
+   <div class="status-row">
+  <button class="hud-btn" id="btnHenshin" onclick="toggleMusic()" style="border-color:#EF9F2755;color:#EF9F27;margin-right:8px;">▶ HENSHIN</button>
+  <div class="pulse" id="statusDot"></div>
+  <span class="status-txt" id="statusTxt">ONLINE</span>
+</div>
   </div>
 
   <div class="cards">
@@ -449,13 +450,24 @@
   };
 
   // ── Background music ──────────────────────────────────────────
-  // Play music only after user clicks/taps anywhere on the page
-  document.addEventListener('click', function() {
-    const music = document.getElementById('bgMusic');
-    if (music.paused) {
-      music.play();
-    }
-  }, { once: true }); // 'once' means it only triggers on the first click
+ window.toggleMusic = function () {
+  const music = document.getElementById('bgMusic');
+  const btn   = document.getElementById('btnHenshin');
+  if (music.paused || music.ended) {
+    music.currentTime = 0; // always restart from beginning
+    music.loop = true;
+    music.play();
+    btn.textContent = '■ HENSHIN';
+    btn.style.borderColor = '#00D4CC55';
+    btn.style.color = '#00D4CC';
+  } else {
+    music.pause();
+    music.currentTime = 0; // reset to start when stopped
+    btn.textContent = '▶ HENSHIN';
+    btn.style.borderColor = '#EF9F2755';
+    btn.style.color = '#EF9F27';
+  }
+};
 </script>
 
 </body>
