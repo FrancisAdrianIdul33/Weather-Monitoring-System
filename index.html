@@ -18,9 +18,11 @@
 .op-corner.br{bottom:16px;right:16px;border-bottom:2px solid #E8192C;border-right:2px solid #E8192C;}
 .op-inner{display:flex;flex-direction:column;align-items:center;gap:clamp(12px,3vw,20px);position:relative;z-index:1;padding:clamp(1rem,4vw,2rem);}
 .op-tag{font-family:'Orbitron',monospace;font-size:clamp(7px,1.8vw,9px);letter-spacing:clamp(2px,0.6vw,4px);color:#00D4CC66;text-transform:uppercase;animation:opFade 1s ease forwards;}
-.op-gif-wrap{position:relative;width:clamp(180px,40vw,320px);height:clamp(180px,40vw,320px);display:flex;align-items:center;justify-content:center;}
+.op-gif-wrap{position:relative;width:clamp(180px,40vw,320px);height:clamp(180px,40vw,320px);display:flex;align-items:center;justify-content:center;margin-top:50px;}
+
 .op-gif-wrap::before{content:'';position:absolute;inset:-8px;border:1px solid #00D4CC33;animation:opPulseBox 2s infinite;}
 .op-gif-wrap::after{content:'';position:absolute;inset:-16px;border:1px solid #E8192C22;animation:opPulseBox 2s infinite 0.5s;}
+.op-glow-ring{position:absolute;inset:0;border-radius:50%;animation:opGlowCycle 3s ease-in-out infinite;pointer-events:none;z-index:-1;}
 .op-gif{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 18px #00D4CC88);}
 .op-title{font-family:'Orbitron',monospace;font-size:clamp(13px,4vw,22px);font-weight:700;color:#00D4CC;letter-spacing:clamp(2px,0.8vw,5px);text-transform:uppercase;text-align:center;text-shadow:0 0 20px #00D4CC88;animation:opGlitch 4s infinite;}
 .op-divider{width:clamp(120px,30vw,200px);height:1px;background:linear-gradient(90deg,transparent,#00D4CC,#E8192C,transparent);}
@@ -133,6 +135,24 @@
   .corner-br{position:absolute;bottom:0;right:0;width:10px;height:10px;border-bottom:1px solid #E8192C;border-right:1px solid #E8192C;}
 
   .hud-footer{font-size:clamp(7px,1.8vw,8px);color:#ffffff22;letter-spacing:clamp(1px,0.4vw,2px);text-align:center;padding-top:8px;border-top:1px solid #00D4CC11;position:relative;z-index:1;word-break:break-all;}
+
+  @keyframes opGlowCycle{
+  0%   {box-shadow:0 0 30px 15px #00D4CC44, 0 0 60px 30px #00D4CC22;}
+  50%  {box-shadow:0 0 40px 20px #E8192C44, 0 0 80px 40px #E8192C22;}
+  100% {box-shadow:0 0 30px 15px #00D4CC44, 0 0 60px 30px #00D4CC22;}
+}
+@keyframes opRingSpin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+@keyframes opAccentPulse{
+  0%,100%{opacity:1;}
+  50%{opacity:0.2;}
+}
+@keyframes opOrbit{
+  0%  {transform:rotate(0deg)   translateX(calc(clamp(90px,20vw,160px))) rotate(0deg);}
+  100%{transform:rotate(360deg) translateX(calc(clamp(90px,20vw,160px))) rotate(-360deg);}
+}
 </style>
 
 <audio id="bgMusic">
@@ -152,9 +172,32 @@
   <div class="op-inner">
     <div class="op-tag">// SYSTEM INITIALIZING //</div>
 
-    <div class="op-gif-wrap">
-      <img class="op-gif" src="media/zeztz-kamen-rider-zeztz.gif" alt="ZEZTZ">
-    </div>
+   <div class="op-gif-wrap">
+  <!-- glow layers -->
+  <div class="op-glow-ring"></div>
+  <div style="position:absolute;inset:0;border-radius:50%;animation:opGlowCycle 3s ease-in-out infinite reverse;pointer-events:none;z-index:-1;animation-delay:-1.5s;"></div>
+
+  <!-- rotating dashed rings -->
+  <svg style="position:absolute;inset:-30px;width:calc(100% + 60px);height:calc(100% + 60px);animation:opRingSpin 8s linear infinite;opacity:0.4;" viewBox="0 0 400 400">
+    <circle cx="200" cy="200" r="190" fill="none" stroke="#00D4CC" stroke-width="1" stroke-dasharray="12 8"/>
+  </svg>
+  <svg style="position:absolute;inset:-50px;width:calc(100% + 100px);height:calc(100% + 100px);animation:opRingSpin 12s linear infinite reverse;opacity:0.25;" viewBox="0 0 500 500">
+    <circle cx="250" cy="250" r="240" fill="none" stroke="#E8192C" stroke-width="1" stroke-dasharray="6 14"/>
+  </svg>
+
+  <!-- hex corner accents -->
+  <div style="position:absolute;top:-4px;left:-4px;width:16px;height:16px;border-top:2px solid #00D4CC;border-left:2px solid #00D4CC;animation:opAccentPulse 1.5s infinite;"></div>
+  <div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-top:2px solid #00D4CC;border-right:2px solid #00D4CC;animation:opAccentPulse 1.5s infinite 0.2s;"></div>
+  <div style="position:absolute;bottom:-4px;left:-4px;width:16px;height:16px;border-bottom:2px solid #E8192C;border-left:2px solid #E8192C;animation:opAccentPulse 1.5s infinite 0.4s;"></div>
+  <div style="position:absolute;bottom:-4px;right:-4px;width:16px;height:16px;border-bottom:2px solid #E8192C;border-right:2px solid #E8192C;animation:opAccentPulse 1.5s infinite 0.6s;"></div>
+
+  <!-- particle dots -->
+  <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:#00D4CC;top:0;left:50%;animation:opOrbit 4s linear infinite;box-shadow:0 0 6px #00D4CC;"></div>
+  <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:#E8192C;top:0;left:50%;animation:opOrbit 4s linear infinite reverse;animation-delay:-2s;box-shadow:0 0 6px #E8192C;"></div>
+  <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:#00D4CC;top:0;left:50%;animation:opOrbit 6s linear infinite;animation-delay:-1s;box-shadow:0 0 4px #00D4CC;opacity:0.6;"></div>
+
+  <img class="op-gif" src="media/zeztz-kamen-rider-zeztz.gif" alt="ZEZTZ">
+</div>
 
     <div class="op-title">Welcome to Zeztz<br>Weather Monitor</div>
     <div class="op-divider"></div>
@@ -163,7 +206,7 @@
     <div class="op-bar-wrap">
       <div class="op-bar" id="opBar"></div>
     </div>
-    <div class="op-timer" id="opTimer">25</div>
+    <div class="op-timer" id="opTimer">15</div>
     <div class="op-skip">[ CAPSEM ACTIVATED ]</div>
   </div>
 </div>
