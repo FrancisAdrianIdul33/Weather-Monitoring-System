@@ -8,6 +8,41 @@
 <body>
 
 <style>
+  /* ── Opening Screen ───────────────────────────────────────── */
+#openingScreen{position:fixed;inset:0;background:#080c10;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;}
+#openingScreen::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,204,0.015) 3px,rgba(0,212,204,0.015) 4px);pointer-events:none;}
+.op-corner{position:absolute;width:24px;height:24px;}
+.op-corner.tl{top:16px;left:16px;border-top:2px solid #00D4CC;border-left:2px solid #00D4CC;}
+.op-corner.tr{top:16px;right:16px;border-top:2px solid #00D4CC;border-right:2px solid #00D4CC;}
+.op-corner.bl{bottom:16px;left:16px;border-bottom:2px solid #E8192C;border-right:none;border-left:2px solid #E8192C;}
+.op-corner.br{bottom:16px;right:16px;border-bottom:2px solid #E8192C;border-right:2px solid #E8192C;}
+.op-inner{display:flex;flex-direction:column;align-items:center;gap:clamp(12px,3vw,20px);position:relative;z-index:1;padding:clamp(1rem,4vw,2rem);}
+.op-tag{font-family:'Orbitron',monospace;font-size:clamp(7px,1.8vw,9px);letter-spacing:clamp(2px,0.6vw,4px);color:#00D4CC66;text-transform:uppercase;animation:opFade 1s ease forwards;}
+.op-gif-wrap{position:relative;width:clamp(180px,40vw,320px);height:clamp(180px,40vw,320px);display:flex;align-items:center;justify-content:center;}
+.op-gif-wrap::before{content:'';position:absolute;inset:-8px;border:1px solid #00D4CC33;animation:opPulseBox 2s infinite;}
+.op-gif-wrap::after{content:'';position:absolute;inset:-16px;border:1px solid #E8192C22;animation:opPulseBox 2s infinite 0.5s;}
+.op-gif{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 18px #00D4CC88);}
+.op-title{font-family:'Orbitron',monospace;font-size:clamp(13px,4vw,22px);font-weight:700;color:#00D4CC;letter-spacing:clamp(2px,0.8vw,5px);text-transform:uppercase;text-align:center;text-shadow:0 0 20px #00D4CC88;animation:opGlitch 4s infinite;}
+.op-divider{width:clamp(120px,30vw,200px);height:1px;background:linear-gradient(90deg,transparent,#00D4CC,#E8192C,transparent);}
+.op-credit{font-family:'Orbitron',monospace;font-size:clamp(7px,2vw,10px);letter-spacing:clamp(1px,0.5vw,3px);color:#E8192C99;text-transform:uppercase;text-align:center;}
+.op-bar-wrap{width:clamp(160px,35vw,260px);height:2px;background:#00D4CC11;position:relative;overflow:hidden;}
+.op-bar{height:100%;width:0%;background:linear-gradient(90deg,#00D4CC,#E8192C);transition:width 0.5s linear;}
+.op-skip{font-family:'Orbitron',monospace;font-size:clamp(7px,1.8vw,8px);letter-spacing:2px;color:#ffffff22;text-transform:uppercase;animation:opBlink 1.5s infinite;}
+.op-timer{font-family:'Orbitron',monospace;font-size:clamp(7px,1.8vw,8px);letter-spacing:2px;color:#00D4CC44;}
+
+@keyframes opFade{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes opPulseBox{0%,100%{opacity:0.4;}50%{opacity:1;}}
+@keyframes opBlink{0%,100%{opacity:0.2;}50%{opacity:0.7;}}
+@keyframes opGlitch{
+  0%,95%,100%{text-shadow:0 0 20px #00D4CC88;color:#00D4CC;}
+  96%{text-shadow:-2px 0 #E8192C,2px 0 #00D4CC;color:#fff;}
+  97%{text-shadow:2px 0 #E8192C,-2px 0 #00D4CC;color:#00D4CC;}
+  98%{text-shadow:-2px 0 #E8192C,2px 0 #00D4CC;color:#fff;}
+}
+@keyframes opSlideOut{from{opacity:1;transform:scale(1);}to{opacity:0;transform:scale(1.04);}}
+.op-exit{animation:opSlideOut 0.6s ease forwards;}
+
+
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
   .hud{background:#080c10;font-family:'Orbitron',monospace;padding:clamp(0.75rem,3vw,1.25rem);min-height:100vh;}
@@ -103,6 +138,35 @@
 <audio id="bgMusic">
   <source src="media/VISIONS 仮面ライダーゼッツ主題歌.mp3" type="audio/mpeg">
 </audio>
+
+<audio id="openingAudio">
+  <source src="media/Henshin Sound.mp3" type="audio/mpeg">
+</audio>
+
+<div id="openingScreen" onclick="skipOpening()">
+  <div class="op-corner tl"></div>
+  <div class="op-corner tr"></div>
+  <div class="op-corner bl"></div>
+  <div class="op-corner br"></div>
+
+  <div class="op-inner">
+    <div class="op-tag">// SYSTEM INITIALIZING //</div>
+
+    <div class="op-gif-wrap">
+      <img class="op-gif" src="media/zeztz-kamen-rider-zeztz.gif" alt="ZEZTZ">
+    </div>
+
+    <div class="op-title">Welcome to Zeztz<br>Weather Monitor</div>
+    <div class="op-divider"></div>
+    <div class="op-credit">Created by Francis Adrian Idul</div>
+
+    <div class="op-bar-wrap">
+      <div class="op-bar" id="opBar"></div>
+    </div>
+    <div class="op-timer" id="opTimer">25</div>
+    <div class="op-skip">[ CAPSEM ACTIVATED ]</div>
+  </div>
+</div>
 
 <div class="hud scanline">
   <div class="hud-header">
@@ -468,6 +532,49 @@
     btn.style.color = '#EF9F27';
   }
 };
+
+// ── Opening Screen ────────────────────────────────────────────
+(function(){
+  const DURATION = 40;
+  let elapsed = 0;
+  let ticker;
+
+  const screen = document.getElementById('openingScreen');
+  const bar    = document.getElementById('opBar');
+  const timer  = document.getElementById('opTimer');
+  const audio  = document.getElementById('openingAudio');
+
+ // play opening audio on first interaction
+document.addEventListener('click', function playOpening() {
+  audio.play().catch(() => {});
+  document.removeEventListener('click', playOpening);
+});
+
+// also try immediate play (works on some browsers)
+audio.play().catch(() => {});
+
+  ticker = setInterval(() => {
+    elapsed++;
+    const pct = (elapsed / DURATION) * 100;
+    bar.style.width = pct + '%';
+    timer.textContent = DURATION - elapsed;
+    if (elapsed >= DURATION) closeOpening();
+  }, 1000);
+
+  function closeOpening() {
+    clearInterval(ticker);
+    screen.classList.add('op-exit');
+    audio.pause();
+    audio.currentTime = 0;
+    setTimeout(() => { screen.style.display = 'none'; }, 600);
+  }
+
+  window.skipOpening = function (e) { 
+  e.stopPropagation();
+  closeOpening(); 
+};
+})();
+
 </script>
 
 </body>
