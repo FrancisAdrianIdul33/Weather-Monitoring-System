@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZEZTZ Weather Monitor</title>
+</head>
+<body>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  .hud{background:#080c10;font-family:'Orbitron',monospace;padding:clamp(0.75rem,3vw,1.25rem);min-height:100vh;}
+  .scanline{position:relative;}
+  .scanline::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,204,0.015) 3px,rgba(0,212,204,0.015) 4px);pointer-events:none;z-index:0;}
+
+  .hud-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1px solid #00D4CC33;padding-bottom:0.75rem;position:relative;z-index:1;gap:8px;flex-wrap:wrap;}
+  .header-left{display:flex;align-items:center;gap:clamp(8px,2vw,14px);}
+  .logo-wrap{flex-shrink:0;width:clamp(36px,8vw,52px);height:clamp(36px,8vw,52px);}
+  .logo-wrap img{width:100%;height:100%;object-fit:contain;}
+  .hud-title{color:#00D4CC;font-size:clamp(11px,3.5vw,15px);font-weight:700;letter-spacing:clamp(1px,0.5vw,3px);text-transform:uppercase;}
+  .hud-sub{color:#00D4CC88;font-size:clamp(7px,2vw,9px);letter-spacing:clamp(1px,0.4vw,2px);margin-top:3px;}
+  .status-row{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .pulse{width:8px;height:8px;border-radius:50%;background:#00D4CC;animation:pulseAnim 1.5s infinite;flex-shrink:0;}
+  .pulse.red{background:#E8192C;animation:pulseRed 1.5s infinite;}
+  @keyframes pulseAnim{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  @keyframes pulseRed{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .status-txt{color:#00D4CC;font-size:clamp(7px,2vw,9px);letter-spacing:2px;white-space:nowrap;}
+
+  .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(6px,2vw,10px);margin-bottom:clamp(0.75rem,2vw,1rem);position:relative;z-index:1;}
+  @media(min-width:520px){.cards{grid-template-columns:repeat(4,minmax(0,1fr));}}
+  .hud-card{background:#0d1418;border:1px solid #00D4CC44;padding:clamp(0.6rem,2vw,0.9rem) clamp(0.7rem,2vw,1rem);position:relative;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));}
+  .hud-card::before{content:'';position:absolute;top:0;left:0;width:24px;height:1px;background:#00D4CC;}
+  .hud-card::after{content:'';position:absolute;bottom:0;right:0;width:24px;height:1px;background:#E8192C;}
+  .hud-card.red-accent{border-color:#E8192C44;}
+  .hud-card.red-accent::before{background:#E8192C;}
+  .hud-card.red-accent::after{background:#00D4CC;}
+  .card-label{font-size:clamp(7px,1.8vw,8px);letter-spacing:clamp(1px,0.4vw,2px);color:#00D4CC99;text-transform:uppercase;margin-bottom:5px;}
+  .card-label.red{color:#E8192C99;}
+  .card-value{font-size:clamp(18px,5vw,26px);font-weight:700;color:#00D4CC;line-height:1;}
+  .card-value.red{color:#E8192C;}
+  .card-unit{font-size:clamp(9px,2vw,11px);font-weight:400;color:#00D4CC66;}
+  .card-unit.red{color:#E8192C66;}
+  .card-sub{font-size:clamp(7px,1.8vw,8px);color:#ffffff33;margin-top:4px;letter-spacing:1px;}
+  .badge{display:inline-block;font-size:clamp(7px,1.8vw,8px);letter-spacing:1px;padding:2px 6px;margin-top:4px;border:1px solid;text-transform:uppercase;}
+  .badge-cyan{border-color:#00D4CC;color:#00D4CC;}
+  .badge-red{border-color:#E8192C;color:#E8192C;}
+  .badge-warn{border-color:#EF9F27;color:#EF9F27;}
+
+  .charts-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(6px,2vw,10px);margin-bottom:clamp(0.75rem,2vw,1rem);position:relative;z-index:1;}
+  @media(min-width:480px){.charts-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .chart-panel{background:#0d1418;border:1px solid #00D4CC33;padding:clamp(0.6rem,2vw,0.9rem);position:relative;}
+  .chart-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,#00D4CC,transparent);}
+  .chart-panel.red::before{background:linear-gradient(90deg,#E8192C,transparent);}
+  .panel-title{font-size:clamp(7px,1.8vw,8px);letter-spacing:clamp(1px,0.4vw,2px);color:#00D4CC;text-transform:uppercase;margin-bottom:8px;}
+  .panel-title.red{color:#E8192C;}
+  .chart-wrap{position:relative;width:100%;height:clamp(110px,20vw,150px);}
+
+  .combined-panel{background:#0d1418;border:1px solid #00D4CC22;padding:clamp(0.6rem,2vw,0.9rem);margin-bottom:clamp(0.75rem,2vw,1rem);position:relative;z-index:1;}
+  .combined-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,#00D4CC,#E8192C,transparent);}
+  .combined-wrap{position:relative;width:100%;height:clamp(130px,25vw,170px);}
+
+  .ctrl-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+  .hud-btn{font-family:'Orbitron',monospace;font-size:clamp(7px,1.8vw,8px);letter-spacing:clamp(1px,0.4vw,2px);padding:5px clamp(8px,2vw,12px);background:transparent;border:1px solid #00D4CC55;color:#00D4CC;cursor:pointer;text-transform:uppercase;transition:all 0.2s;}
+  .hud-btn:hover{background:#00D4CC22;border-color:#00D4CC;}
+  .hud-btn.active{background:#00D4CC22;border-color:#00D4CC;}
+  .hud-btn.pause{border-color:#E8192C55;color:#E8192C;}
+  .hud-btn.pause:hover,.hud-btn.pause.active{background:#E8192C22;border-color:#E8192C;}
+  .hud-btn.export{border-color:#EF9F2755;color:#EF9F27;position:relative;overflow:hidden;}
+  .hud-btn.export:hover{background:#EF9F2722;border-color:#EF9F27;}
+  .hud-btn.export:disabled{opacity:0.35;cursor:not-allowed;}
+  .hud-btn.export.flash::after{content:'';position:absolute;inset:0;background:#EF9F2744;animation:exportFlash 0.4s ease-out forwards;}
+  @keyframes exportFlash{from{opacity:1}to{opacity:0}}
+
+  .legend-row{display:flex;gap:clamp(10px,3vw,16px);margin-bottom:8px;flex-wrap:wrap;}
+  .leg-item{display:flex;align-items:center;gap:5px;font-size:clamp(7px,1.8vw,8px);letter-spacing:1px;color:#ffffff66;}
+  .leg-dot{width:10px;height:2px;flex-shrink:0;}
+
+  /* ── CSV Export Panel ─────────────────────────────── */
+  .export-panel{background:#0d1418;border:1px solid #EF9F2733;padding:clamp(0.6rem,2vw,0.9rem);margin-bottom:clamp(0.75rem,2vw,1rem);position:relative;z-index:1;}
+  .export-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,#EF9F27,transparent);}
+  .export-panel-title{font-size:clamp(7px,1.8vw,8px);letter-spacing:clamp(1px,0.4vw,2px);color:#EF9F27;text-transform:uppercase;margin-bottom:10px;}
+  .export-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;}
+  .export-stats{display:flex;flex-wrap:wrap;gap:clamp(10px,3vw,20px);margin-top:8px;}
+  .export-stat{font-size:clamp(7px,1.8vw,8px);letter-spacing:1px;}
+  .export-stat-label{color:#EF9F2788;text-transform:uppercase;}
+  .export-stat-val{color:#EF9F27;font-weight:700;margin-left:6px;}
+  .export-stat-val.cyan{color:#00D4CC;}
+  .export-stat-val.red{color:#E8192C;}
+  .hud-select{font-family:'Orbitron',monospace;font-size:clamp(7px,1.8vw,8px);letter-spacing:1px;padding:5px clamp(8px,2vw,10px);background:#080c10;border:1px solid #EF9F2755;color:#EF9F27;cursor:pointer;text-transform:uppercase;outline:none;appearance:none;-webkit-appearance:none;}
+  .hud-select:focus{border-color:#EF9F27;}
+  .hud-select option{background:#080c10;}
+  .select-wrap{position:relative;display:inline-block;}
+  .select-wrap::after{content:'▼';position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#EF9F2788;font-size:7px;pointer-events:none;}
+  .export-log{font-size:clamp(7px,1.8vw,8px);letter-spacing:1px;color:#EF9F2766;margin-top:6px;min-height:14px;transition:opacity 0.3s;}
+
+  .corner-tl{position:absolute;top:0;left:0;width:10px;height:10px;border-top:1px solid #00D4CC;border-left:1px solid #00D4CC;}
+  .corner-br{position:absolute;bottom:0;right:0;width:10px;height:10px;border-bottom:1px solid #E8192C;border-right:1px solid #E8192C;}
+
+  .hud-footer{font-size:clamp(7px,1.8vw,8px);color:#ffffff22;letter-spacing:clamp(1px,0.4vw,2px);text-align:center;padding-top:8px;border-top:1px solid #00D4CC11;position:relative;z-index:1;word-break:break-all;}
+</style>
+
+<audio id="bgMusic" src="/media/VISION.mp3" loop></audio>
+
+<div class="hud scanline">
+  <div class="hud-header">
+    <div class="header-left">
+      <div class="logo-wrap">
+        <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/0993515e-728c-4c26-a93b-89cda220caad/dk43an4-490938cd-1b00-487d-840a-0af9a1587e1c.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi8wOTkzNTE1ZS03MjhjLTRjMjYtYTkzYi04OWNkYTIyMGNhYWQvZGs0M2FuNC00OTA5MzhjZC0xYjAwLTQ4N2QtODQwYS0wYWY5YTE1ODdlMWMucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.-85RlpL2z5S3djYHiPb0JjdZjTIUO1uAu66Q3_yvUmo" alt="logo" />
+      </div>
+      <div>
+        <div class="hud-title">// ZEZTZ WEATHER MONITOR //</div>
+        <div class="hud-sub">ESP32 · DHT11 · MANOLO FORTICH · PH</div>
+      </div>
+    </div>
+    <div class="status-row">
+      <div class="pulse" id="statusDot"></div>
+      <span class="status-txt" id="statusTxt">ONLINE</span>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="hud-card">
+      <div class="corner-tl"></div><div class="corner-br"></div>
+      <div class="card-label">TEMPERATURE</div>
+      <div class="card-value" id="tempVal">--<span class="card-unit"> °C</span></div>
+      <div class="card-sub" id="tempTime">AWAITING DATA</div>
+      <div id="tempBadge"></div>
+    </div>
+    <div class="hud-card red-accent">
+      <div class="corner-tl"></div><div class="corner-br"></div>
+      <div class="card-label red">HUMIDITY</div>
+      <div class="card-value red" id="humVal">--<span class="card-unit red"> %</span></div>
+      <div class="card-sub" id="humTime">AWAITING DATA</div>
+      <div id="humBadge"></div>
+    </div>
+    <div class="hud-card">
+      <div class="corner-tl"></div><div class="corner-br"></div>
+      <div class="card-label">HEAT INDEX</div>
+      <div class="card-value" id="hiVal">--<span class="card-unit"> °C</span></div>
+      <div class="card-sub">PERCEIVED TEMP</div>
+    </div>
+    <div class="hud-card red-accent">
+      <div class="corner-tl"></div><div class="corner-br"></div>
+      <div class="card-label red">READINGS</div>
+      <div class="card-value red" id="countVal">000</div>
+      <div class="card-sub">CYCLE / 5S</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-panel">
+      <div class="panel-title">[ TEMP TRACE ]</div>
+      <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+    </div>
+    <div class="chart-panel red">
+      <div class="panel-title red">[ HUMIDITY TRACE ]</div>
+      <div class="chart-wrap"><canvas id="humChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="combined-panel">
+    <div class="panel-title">[ DUAL SENSOR OVERLAY ]</div>
+    <div class="ctrl-row">
+      <button class="hud-btn active">LIVE FEED</button>
+      <button class="hud-btn pause" id="btnPause" onclick="togglePause()">PAUSE</button>
+    </div>
+    <div class="legend-row">
+      <div class="leg-item"><div class="leg-dot" style="background:#00D4CC"></div>TEMP °C</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#E8192C"></div>HUMIDITY %</div>
+    </div>
+    <div class="combined-wrap"><canvas id="combinedChart"></canvas></div>
+  </div>
+
+  <!-- ── CSV EXPORT PANEL ───────────────────────────────────── -->
+  <div class="export-panel">
+    <div class="export-panel-title">[ DATA EXPORT — CSV ]</div>
+    <div class="export-row">
+      <div class="select-wrap">
+        <select class="hud-select" id="exportRange">
+          <option value="all">ALL RECORDS</option>
+          <option value="last10">LAST 10</option>
+          <option value="last50">LAST 50</option>
+          <option value="last100">LAST 100</option>
+          <option value="session">SESSION ONLY</option>
+        </select>
+      </div>
+      <button class="hud-btn export" id="btnExport" onclick="exportCSV()" disabled>
+        ⬇ EXPORT CSV
+      </button>
+      <button class="hud-btn export" id="btnClear" onclick="clearLog()" disabled style="border-color:#E8192C55;color:#E8192C;">
+        ✕ CLEAR LOG
+      </button>
+    </div>
+    <div class="export-stats">
+      <span class="export-stat"><span class="export-stat-label">LOGGED</span><span class="export-stat-val cyan" id="logCount">0</span></span>
+      <span class="export-stat"><span class="export-stat-label">MIN TEMP</span><span class="export-stat-val cyan" id="minTemp">--</span></span>
+      <span class="export-stat"><span class="export-stat-label">MAX TEMP</span><span class="export-stat-val red" id="maxTemp">--</span></span>
+      <span class="export-stat"><span class="export-stat-label">AVG TEMP</span><span class="export-stat-val" id="avgTemp">--</span></span>
+      <span class="export-stat"><span class="export-stat-label">MIN HUM</span><span class="export-stat-val cyan" id="minHum">--</span></span>
+      <span class="export-stat"><span class="export-stat-label">MAX HUM</span><span class="export-stat-val red" id="maxHum">--</span></span>
+      <span class="export-stat"><span class="export-stat-label">AVG HUM</span><span class="export-stat-val" id="avgHum">--</span></span>
+    </div>
+    <div class="export-log" id="exportLog">// AWAITING SENSOR DATA TO BEGIN LOGGING //</div>
+  </div>
+
+  <div class="hud-footer" id="footerTime">// SYSTEM READY — AWAITING SENSOR INPUT //</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyCACP4N0KHqBtkXelkTqRE1sauRhPiuovc",
+  authDomain: "weathermonitor-c7e34.firebaseapp.com",
+  projectId: "weathermonitor-c7e34",
+  storageBucket: "weathermonitor-c7e34.firebasestorage.app",
+  messagingSenderId: "484818334071",
+  appId: "1:484818334071:web:9e92605bb45e5bf4a2b172"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // ── Chart setup ──────────────────────────────────────────────
+  const MAX = 20;
+  let tempData = [], humData = [], labels = [];
+  let count = 0, paused = false;
+  const gridColor = 'rgba(0,212,204,0.08)';
+  const tickC = { font:{size:9,family:'monospace'}, color:'#00D4CC55' };
+  const tickR = { font:{size:9,family:'monospace'}, color:'#E8192C55' };
+
+  // ── Full log for CSV (unbounded) ─────────────────────────────
+  let fullLog = []; // [{timestamp, temperature, humidity, heatIndex, tempStatus, humStatus}]
+
+  function makeLine(id, color, yMin, yMax) {
+    return new Chart(document.getElementById(id), {
+      type: 'line',
+      data: { labels:[], datasets:[{ data:[], borderColor:color, backgroundColor:color+'18', borderWidth:1.5, pointRadius:2, pointBackgroundColor:color, fill:true, tension:0.4 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
+        x:{ ticks:{...tickC,maxTicksLimit:5}, grid:{color:gridColor} },
+        y:{ min:yMin, max:yMax, ticks:{...tickC}, grid:{color:gridColor} }
+      }}
+    });
+  }
+
+  const tChart = makeLine('tempChart','#00D4CC', 20, 45);
+  const hChart = makeLine('humChart', '#E8192C', 30, 100);
+
+  const combinedChart = new Chart(document.getElementById('combinedChart'), {
+    type: 'line',
+    data: { labels:[], datasets:[
+      { label:'Temp', data:[], borderColor:'#00D4CC', backgroundColor:'#00D4CC0f', borderWidth:1.5, pointRadius:2, pointBackgroundColor:'#00D4CC', fill:true, tension:0.4, yAxisID:'y'  },
+      { label:'Hum',  data:[], borderColor:'#E8192C', backgroundColor:'#E8192C0f', borderWidth:1.5, pointRadius:2, pointBackgroundColor:'#E8192C', fill:true, tension:0.4, yAxisID:'y2' }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
+      x:  { ticks:{...tickC,maxTicksLimit:8}, grid:{color:gridColor} },
+      y:  { min:20,  max:45,  position:'left',  ticks:{...tickC}, grid:{color:gridColor} },
+      y2: { min:30,  max:100, position:'right', ticks:{...tickR}, grid:{display:false}  }
+    }}
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function heatIndex(t, h) {
+    const hi = -8.78469475556 + 1.61139411*t + 2.33854883889*h - 0.14611605*t*h
+               - 0.012308094*t*t - 0.0164248277778*h*h + 0.002211732*t*t*h
+               + 0.00072546*t*h*h - 0.000003582*t*t*h*h;
+    return Math.round(hi * 10) / 10;
+  }
+  function tempBadge(t)  { if(t<25) return['COOL','badge-cyan']; if(t<32) return['NOMINAL','badge-cyan']; if(t<36) return['ELEVATED','badge-warn']; return['CRITICAL','badge-red']; }
+  function humBadge(h)   { if(h<40) return['DRY','badge-cyan'];  if(h<70) return['STABLE','badge-cyan'];  return['SATURATED','badge-red']; }
+  function pad(n)        { return String(n).padStart(3,'0'); }
+
+  // ── Update export stats panel ─────────────────────────────────
+  function updateExportStats() {
+    if (!fullLog.length) return;
+    const temps = fullLog.map(r => r.temperature);
+    const hums  = fullLog.map(r => r.humidity);
+    const avg   = arr => (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1);
+
+    document.getElementById('logCount').textContent = fullLog.length;
+    document.getElementById('minTemp').textContent  = Math.min(...temps).toFixed(1) + ' °C';
+    document.getElementById('maxTemp').textContent  = Math.max(...temps).toFixed(1) + ' °C';
+    document.getElementById('avgTemp').textContent  = avg(temps) + ' °C';
+    document.getElementById('minHum').textContent   = Math.min(...hums).toFixed(1) + ' %';
+    document.getElementById('maxHum').textContent   = Math.max(...hums).toFixed(1) + ' %';
+    document.getElementById('avgHum').textContent   = avg(hums) + ' %';
+
+    const expBtn  = document.getElementById('btnExport');
+    const clrBtn  = document.getElementById('btnClear');
+    expBtn.disabled = false;
+    clrBtn.disabled = false;
+  }
+
+  // ── Push new reading to UI + charts ──────────────────────────
+  function pushData(t, h) {
+    const now = new Date();
+    const lbl = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const hi  = heatIndex(t, h);
+    const [tl] = tempBadge(t);
+    const [hl] = humBadge(h);
+
+    // Always log to full history (even when paused)
+    fullLog.push({
+      timestamp:   now.toISOString(),
+      date:        now.toLocaleDateString('en-PH'),
+      time:        now.toLocaleTimeString('en-PH'),
+      temperature: t,
+      humidity:    h,
+      heatIndex:   hi,
+      tempStatus:  tl,
+      humStatus:   hl
+    });
+    updateExportStats();
+    document.getElementById('exportLog').textContent =
+      `// LOGGED ${fullLog.length} RECORD${fullLog.length!==1?'S':''} — LAST: ${lbl} //`;
+
+    if (paused) return;
+
+    count++;
+    tempData.push(t); humData.push(h); labels.push(lbl);
+    if (tempData.length > MAX) { tempData.shift(); humData.shift(); labels.shift(); }
+
+    document.getElementById('tempVal').innerHTML  = t.toFixed(1) + '<span class="card-unit"> °C</span>';
+    document.getElementById('humVal').innerHTML   = h.toFixed(1) + '<span class="card-unit red"> %</span>';
+    document.getElementById('hiVal').innerHTML    = hi + '<span class="card-unit"> °C</span>';
+    document.getElementById('countVal').textContent = pad(count);
+    document.getElementById('tempTime').textContent = 'UPD ' + lbl;
+    document.getElementById('humTime').textContent  = 'UPD ' + lbl;
+    document.getElementById('footerTime').textContent = '// LAST SYNC: ' + now.toLocaleString().toUpperCase() + ' //';
+
+    document.getElementById('tempBadge').innerHTML = `<span class="badge badge-${tl==='CRITICAL'?'red':tl==='ELEVATED'?'warn':'cyan'}">${tl}</span>`;
+    document.getElementById('humBadge').innerHTML  = `<span class="badge badge-${hl==='SATURATED'?'red':'cyan'}">${hl}</span>`;
+
+    const ls = [...labels];
+    tChart.data.labels = ls; tChart.data.datasets[0].data = [...tempData]; tChart.update('none');
+    hChart.data.labels = ls; hChart.data.datasets[0].data = [...humData];  hChart.update('none');
+    combinedChart.data.labels = ls;
+    combinedChart.data.datasets[0].data = [...tempData];
+    combinedChart.data.datasets[1].data = [...humData];
+    combinedChart.update('none');
+  }
+
+  // ── CSV export ────────────────────────────────────────────────
+  window.exportCSV = function () {
+    if (!fullLog.length) return;
+
+    const range  = document.getElementById('exportRange').value;
+    let records  = fullLog;
+    if      (range === 'last10')  records = fullLog.slice(-10);
+    else if (range === 'last50')  records = fullLog.slice(-50);
+    else if (range === 'last100') records = fullLog.slice(-100);
+    else if (range === 'session') records = fullLog; // same as all for session
+
+    const header = ['No','Timestamp (ISO)','Date','Time','Temperature (°C)','Humidity (%)','Heat Index (°C)','Temp Status','Humidity Status'];
+    const rows   = records.map((r, i) => [
+      i + 1,
+      r.timestamp,
+      r.date,
+      r.time,
+      r.temperature.toFixed(2),
+      r.humidity.toFixed(2),
+      r.heatIndex.toFixed(2),
+      r.tempStatus,
+      r.humStatus
+    ]);
+
+    const csvContent = [header, ...rows]
+      .map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+      .join('\r\n');
+
+    // Prepend metadata header block
+    const now = new Date();
+    const meta = [
+      `"# ZEZTZ WEATHER MONITOR — DATA EXPORT"`,
+      `"# Device: ESP32 + DHT11 | Location: Manolo Fortich, Bukidnon, PH"`,
+      `"# Export Time: ${now.toLocaleString('en-PH')}"`,
+      `"# Total Records Exported: ${records.length}"`,
+      `"# Range Filter: ${range.toUpperCase()}"`,
+      ``
+    ].join('\r\n');
+
+    const blob = new Blob([meta + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const fname = `ZEZTZ_weather_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}.csv`;
+    link.href = url;
+    link.setAttribute('download', fname);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Flash feedback
+    const btn = document.getElementById('btnExport');
+    btn.classList.add('flash');
+    btn.textContent = '✓ EXPORTED';
+    setTimeout(() => {
+      btn.classList.remove('flash');
+      btn.textContent = '⬇ EXPORT CSV';
+    }, 1800);
+
+    document.getElementById('exportLog').textContent =
+      `// EXPORTED ${records.length} RECORDS → ${fname} //`;
+  };
+
+  // ── Clear log ─────────────────────────────────────────────────
+  window.clearLog = function () {
+    if (!fullLog.length) return;
+    if (!confirm('Clear all logged sensor data? This cannot be undone.')) return;
+    fullLog = [];
+    document.getElementById('logCount').textContent = '0';
+    ['minTemp','maxTemp','avgTemp','minHum','maxHum','avgHum'].forEach(id => {
+      document.getElementById(id).textContent = '--';
+    });
+    document.getElementById('btnExport').disabled = true;
+    document.getElementById('btnClear').disabled  = true;
+    document.getElementById('exportLog').textContent = '// LOG CLEARED — AWAITING NEW DATA //';
+  };
+
+  // ── Firebase Realtime listener on sensor/current ──────────────
+  const sensorRef = ref(db, 'sensor/current');
+  onValue(sensorRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+    const t = parseFloat(data.temperature);
+    const h = parseFloat(data.humidity);
+    if (!isNaN(t) && !isNaN(h)) pushData(t, h);
+  }, (error) => {
+    console.error('Firebase read error:', error);
+    document.getElementById('statusDot').className = 'pulse red';
+    document.getElementById('statusTxt').textContent = 'ERROR';
+  });
+
+  // ── Pause toggle (exposed to global scope for onclick) ────────
+  window.togglePause = function () {
+    paused = !paused;
+    const btn = document.getElementById('btnPause');
+    document.getElementById('statusDot').className   = paused ? 'pulse red' : 'pulse';
+    document.getElementById('statusTxt').textContent = paused ? 'STANDBY'   : 'ONLINE';
+    btn.textContent = paused ? 'RESUME' : 'PAUSE';
+    btn.classList.toggle('active', paused);
+  };
+
+  // ── Background music ──────────────────────────────────────────
+  const music = document.getElementById('bgMusic');
+  music.volume = 0.5;
+  const tryPlay = () => {
+    music.play().catch(()=>{});
+    document.removeEventListener('click',    tryPlay);
+    document.removeEventListener('keydown',  tryPlay);
+    document.removeEventListener('touchstart', tryPlay);
+  };
+  music.play().catch(() => {
+    document.addEventListener('click',     tryPlay);
+    document.addEventListener('keydown',   tryPlay);
+    document.addEventListener('touchstart', tryPlay);
+  });
+</script>
+
+</body>
+</html>
